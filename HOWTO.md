@@ -36,7 +36,8 @@ pip install -r requirements.txt
 
 # Configure credentials
 cp .env.example .env
-# Edit .env and fill in your LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET
+# Edit .env and fill in LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET,
+# and LINKEDIN_OWNER_EMAILS (comma-separated emails safe to appear in posts)
 ```
 
 ---
@@ -90,6 +91,26 @@ You only need to do this once. Tokens are valid for approximately 60 days.
 
 ---
 
+## Safety & GDPR Compliance
+
+Two guards run automatically before any post is sent:
+
+1. **Approval gate** — Claude is instructed (via `CLAUDE.md`) to always show you the full post text and wait for your explicit confirmation before calling a posting tool.
+2. **PreToolUse hook** — `scripts/pre_post_check.py` runs before every `post_text` / `post_with_article` call and blocks the request if it detects:
+   - Email addresses not listed in `LINKEDIN_OWNER_EMAILS`
+   - JWT tokens, AWS access keys, or PEM private keys
+   - Generic credential patterns (`password=…`, `api_key=…`, etc.)
+
+The hook is wired up in `.claude/settings.json` and activates automatically for anyone using Claude Code with this project — no extra configuration needed beyond the standard venv setup (`pip install -r requirements.txt`). The hook uses `.venv/bin/python` so it always runs with the project's dependencies available.
+
+To whitelist your own email address(es), add them to `.env`:
+
+```
+LINKEDIN_OWNER_EMAILS=you@example.com,alias@example.com
+```
+
+---
+
 ## Available Tools
 
 | Tool | Description |
@@ -120,12 +141,16 @@ This overwrites `.linkedin_token` with a fresh token. No other changes needed.
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 
-# Unit tests (no network required)
-pytest tests/test_server.py -v
+# All unit tests (server, safety hook, OAuth flow)
+pytest tests/ -v
 
-# OAuth browser flow test (requires Playwright)
+# OAuth browser flow test requires Playwright (already installed if test_auth passes)
 python -m playwright install chromium
 pytest tests/test_auth.py -v
+
+# Manual smoke-test the safety hook
+echo '{"tool_name":"mcp__linkedin__post_text","tool_input":{"text":"Hello world","visibility":"PUBLIC"}}' \
+  | python scripts/pre_post_check.py
 ```
 
 ---
@@ -135,3 +160,5 @@ pytest tests/test_auth.py -v
 - `.env` and `.linkedin_token` are gitignored — never commit them.
 - `claude_desktop_config.json` (which contains absolute local paths) is also gitignored; use `claude_desktop_config.example.json` as the template.
 - The server only requests the minimum OAuth scopes: `openid profile w_member_social`.
+- `.linkedin_token` is written with `0600` permissions (owner read/write only) on macOS/Linux.
+- The PreToolUse hook in `.claude/settings.json` acts as a backstop against accidental PII or secret leakage in posts — see [Safety & GDPR Compliance](#safety--gdpr-compliance) above.
