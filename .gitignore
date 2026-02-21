@@ -1,0 +1,18 @@
+# Secrets — never commit these
+.env
+.linkedin_token
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local Claude Desktop config (contains absolute paths)
+claude_desktop_config.json
