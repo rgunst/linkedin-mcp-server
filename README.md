@@ -38,10 +38,22 @@ cp .env.example .env
 python auth.py
 
 # 4. Register with Claude Desktop
-cp claude_desktop_config.example.json claude_desktop_config.json
-# Edit claude_desktop_config.json — update the absolute paths for your machine
-# Then merge the mcpServers block into ~/Library/Application Support/Claude/claude_desktop_config.json
 ```
+
+Open (or create) `~/Library/Application Support/Claude/claude_desktop_config.json` and add the following, replacing `<absolute-path>` with the full path to your clone (e.g. `/Users/you/Projects/linkedin-mcp-server`):
+
+```json
+{
+  "mcpServers": {
+    "linkedin": {
+      "command": "<absolute-path>/.venv/bin/python",
+      "args": ["<absolute-path>/server.py"]
+    }
+  }
+}
+```
+
+If the file already exists and already has an `"mcpServers"` key, add only the `"linkedin"` block inside it.
 
 Restart Claude Desktop and you should see the LinkedIn tools available.
 
