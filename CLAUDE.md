@@ -82,6 +82,7 @@ Before calling `post_text` or `post_with_article`:
    - Passwords, API keys, tokens, or any credential material
    - Health, biometric, or other GDPR special-category data of identifiable people
 4. If the content violates any rule above, refuse and explain why instead of posting.
+5. **Never use parentheses `()`** in post text — LinkedIn's API silently truncates content at the first `(` character.
 
 ## LinkedIn API Notes
 
