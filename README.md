@@ -55,6 +55,8 @@ Open (or create) `~/Library/Application Support/Claude/claude_desktop_config.jso
 
 If the file already exists and already has an `"mcpServers"` key, add only the `"linkedin"` block inside it.
 
+> **Note on credentials:** `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` belong in `.env` only — they are used by `auth.py` during the one-time OAuth flow and are never read by `server.py`. The Claude Desktop config needs no secrets because the server reads the access token directly from `.linkedin_token`.
+
 Restart Claude Desktop and you should see the LinkedIn tools available.
 
 ## Development

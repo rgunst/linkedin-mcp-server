@@ -42,16 +42,8 @@ def _headers(token: str) -> dict:
         "X-Restli-Protocol-Version": "2.0.0",
     }
 
-# ---------------------------------------------------------------------------
-# MCP Server
-# ---------------------------------------------------------------------------
-mcp = FastMCP("linkedin")
-
-
-@mcp.tool()
-def get_profile() -> dict:
-    """Get the authenticated LinkedIn user's profile (name + person URN)."""
-    token = _get_token()
+def _get_profile(token: str) -> dict:
+    """Fetch profile using an already-resolved token (avoids duplicate token lookups)."""
     # /v2/userinfo works with openid+profile scopes; /rest/me requires partner API access
     resp = httpx.get(
         "https://api.linkedin.com/v2/userinfo",
@@ -67,6 +59,18 @@ def get_profile() -> dict:
         "firstName": data.get("given_name"),
         "lastName": data.get("family_name"),
     }
+
+# ---------------------------------------------------------------------------
+# MCP Server
+# ---------------------------------------------------------------------------
+mcp = FastMCP("linkedin")
+
+
+@mcp.tool()
+def get_profile() -> dict:
+    """Get the authenticated LinkedIn user's profile (name + person URN)."""
+    token = _get_token()
+    return _get_profile(token)
 
 
 @mcp.tool()
@@ -88,7 +92,7 @@ def post_text(text: str, visibility: str = "PUBLIC") -> dict:
         raise ValueError("visibility must be 'PUBLIC' or 'CONNECTIONS'")
 
     token   = _get_token()
-    profile = get_profile()
+    profile = _get_profile(token)
     author  = profile["urn"]
 
     payload = {
@@ -113,8 +117,6 @@ def post_text(text: str, visibility: str = "PUBLIC") -> dict:
     resp.raise_for_status()
 
     post_urn = resp.headers.get("x-restli-id", "")
-    post_id  = post_urn.split(":")[-1] if post_urn else "unknown"
-
     return {
         "success": True,
         "post_urn": post_urn,
@@ -147,8 +149,11 @@ def post_with_article(
     if not text or not article_url:
         raise ValueError("text and article_url are required")
 
+    if visibility not in ("PUBLIC", "CONNECTIONS"):
+        raise ValueError("visibility must be 'PUBLIC' or 'CONNECTIONS'")
+
     token   = _get_token()
-    profile = get_profile()
+    profile = _get_profile(token)
     author  = profile["urn"]
 
     # Fix: removed unused `content` variable; payload uses article directly

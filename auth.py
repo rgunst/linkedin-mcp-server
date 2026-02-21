@@ -12,6 +12,8 @@ Requires LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in environment
 import os
 import json
 import secrets
+import stat
+import time
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlencode, urlparse, parse_qs
@@ -97,9 +99,14 @@ def run_oauth_flow():
     webbrowser.open(auth_link)
 
     # Wait for callback (loop so that stray TCP probes don't consume the slot)
+    # Bail out after 5 minutes so the process doesn't hang forever.
+    deadline = time.monotonic() + 300
     server = HTTPServer(("localhost", 8765), CallbackHandler)
+    server.timeout = 5  # handle_request returns after this many seconds if idle
     print("Waiting for OAuth callback on http://localhost:8765 ...")
     while not auth_code:
+        if time.monotonic() > deadline:
+            raise SystemExit("Timed out waiting for OAuth callback (5 min). Re-run auth.py to try again.")
         server.handle_request()
 
     if not auth_code:
@@ -121,10 +128,11 @@ def run_oauth_flow():
     resp.raise_for_status()
     token_data = resp.json()
 
-    # Save token
+    # Save token (owner-read/write only — 0600)
     token_file = os.path.join(os.path.dirname(__file__), ".linkedin_token")
     with open(token_file, "w") as f:
         json.dump(token_data, f, indent=2)
+    os.chmod(token_file, stat.S_IRUSR | stat.S_IWUSR)
 
     print(f"\n✓ Access token saved to {token_file}")
     print(f"  Expires in: {token_data.get('expires_in', '?')} seconds (~60 days)")

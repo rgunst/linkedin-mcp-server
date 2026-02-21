@@ -9,6 +9,7 @@ import os
 import pytest
 import respx
 import httpx
+import server
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -57,7 +58,6 @@ def set_token_env(monkeypatch):
 def test_get_profile_success():
     respx.get("https://api.linkedin.com/v2/userinfo").mock(return_value=_userinfo_response())
 
-    import server
     result = server.get_profile()
 
     assert result["id"] == FAKE_SUB
@@ -69,7 +69,6 @@ def test_get_profile_success():
 def test_get_profile_no_token(monkeypatch, tmp_path):
     monkeypatch.delenv("LINKEDIN_ACCESS_TOKEN", raising=False)
     # Redirect __file__ lookup to a temp dir with no .linkedin_token
-    import server
     monkeypatch.setattr(server, "__file__", str(tmp_path / "server.py"))
 
     with pytest.raises(RuntimeError, match="No LinkedIn access token"):
@@ -85,7 +84,6 @@ def test_post_text_success():
     respx.get("https://api.linkedin.com/v2/userinfo").mock(return_value=_userinfo_response())
     respx.post("https://api.linkedin.com/rest/posts").mock(return_value=_post_201_response())
 
-    import server
     result = server.post_text("Hello LinkedIn!")
 
     assert result["success"] is True
@@ -95,7 +93,6 @@ def test_post_text_success():
 
 
 def test_post_text_empty():
-    import server
     with pytest.raises(ValueError, match="text cannot be empty"):
         server.post_text("")
 
@@ -104,7 +101,6 @@ def test_post_text_empty():
 
 
 def test_post_text_bad_visibility():
-    import server
     with pytest.raises(ValueError, match="visibility must be"):
         server.post_text("hello", visibility="EVERYONE")
 
@@ -120,7 +116,6 @@ def test_post_with_article_success():
         return_value=_post_201_response()
     )
 
-    import server
     result = server.post_with_article(
         text="Check this out",
         article_url="https://example.com/article",
@@ -138,6 +133,11 @@ def test_post_with_article_success():
     assert sent_payload["content"]["article"]["description"] == "A great read"
 
 
+def test_post_with_article_bad_visibility():
+    with pytest.raises(ValueError, match="visibility"):
+        server.post_with_article("text", "https://example.com", visibility="EVERYONE")
+
+
 # ---------------------------------------------------------------------------
 # delete_post
 # ---------------------------------------------------------------------------
@@ -149,7 +149,6 @@ def test_delete_post_success():
         return_value=httpx.Response(204)
     )
 
-    import server
     result = server.delete_post(FAKE_POST_URN)
 
     assert result["success"] is True
@@ -172,7 +171,6 @@ def test_urn_encoding():
         side_effect=_capture
     )
 
-    import server
     server.delete_post(urn)
 
     assert expected_encoded in captured["url"]
