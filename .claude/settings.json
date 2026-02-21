@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python scripts/pre_post_check.py"
+            "command": ".venv/bin/python scripts/pre_post_check.py"
           }
         ]
       }

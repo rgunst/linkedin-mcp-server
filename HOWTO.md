@@ -101,7 +101,7 @@ Two guards run automatically before any post is sent:
    - JWT tokens, AWS access keys, or PEM private keys
    - Generic credential patterns (`password=…`, `api_key=…`, etc.)
 
-The hook is wired up in `.claude/settings.json` and activates automatically for anyone using Claude Code with this project.
+The hook is wired up in `.claude/settings.json` and activates automatically for anyone using Claude Code with this project — no extra configuration needed beyond the standard venv setup (`pip install -r requirements.txt`). The hook uses `.venv/bin/python` so it always runs with the project's dependencies available.
 
 To whitelist your own email address(es), add them to `.env`:
 
