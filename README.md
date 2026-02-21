@@ -18,6 +18,24 @@ MCP server that gives Claude Desktop the ability to post, manage, and delete Lin
 | `post_with_article(text, article_url, article_title, article_description, visibility)` | Posts text with an external link preview card |
 | `delete_post(post_urn)` | Deletes a post by URN (e.g. `urn:li:share:1234567890`) |
 
+## Safety & GDPR compliance
+
+Before any post is sent, two complementary guards run automatically:
+
+1. **Approval gate (CLAUDE.md)** — Claude is instructed to always display the full post text and wait for your explicit "yes" before calling a posting tool.
+2. **PreToolUse hook (`scripts/pre_post_check.py`)** — A lightweight script that runs before every `post_text` / `post_with_article` call and blocks the request if it finds:
+   - Email addresses not in your `LINKEDIN_OWNER_EMAILS` whitelist
+   - JWT tokens, AWS access keys, or PEM private keys
+   - Generic credential assignments (`password=…`, `api_key=…`, etc.)
+
+The hook is configured in `.claude/settings.json` and is active for everyone who opens this repo in Claude Code.
+
+To whitelist your own email address(es), add them to `.env`:
+
+```
+LINKEDIN_OWNER_EMAILS=you@example.com,alias@example.com
+```
+
 ## Quick start
 
 **Prerequisites:** Python ≥ 3.11 and a [LinkedIn Developer App](https://www.linkedin.com/developers/apps) with OAuth scopes `openid profile w_member_social`.
@@ -32,7 +50,8 @@ pip install -r requirements.txt
 
 # 2. Add your LinkedIn credentials
 cp .env.example .env
-# Edit .env and fill in LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET
+# Edit .env and fill in LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET,
+# and LINKEDIN_OWNER_EMAILS (comma-separated emails safe to include in posts)
 
 # 3. Authenticate once (opens a browser window)
 python auth.py
@@ -72,8 +91,8 @@ python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt -r requirements-dev.txt
 
-# Run unit tests
-pytest tests/test_server.py -v
+# Run all tests (server, auth, pre-post safety hook)
+pytest tests/ -v
 
 # Run OAuth browser flow test (requires Playwright)
 python -m playwright install chromium
@@ -81,6 +100,10 @@ pytest tests/test_auth.py -v
 
 # Vulnerability scan
 trivy fs --severity HIGH,CRITICAL .
+
+# Manual smoke-test the safety hook
+echo '{"tool_name":"mcp__linkedin__post_text","tool_input":{"text":"Hello world","visibility":"PUBLIC"}}' \
+  | python scripts/pre_post_check.py
 ```
 
 > **Claude Code users:** This repository includes a `CLAUDE.md` that is

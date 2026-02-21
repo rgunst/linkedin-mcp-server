@@ -68,6 +68,21 @@ Two-file design with clear separation:
 | `post_with_article(text, article_url, article_title, article_description, visibility)` | Posts text with external link preview |
 | `delete_post(post_urn)` | Deletes a post by URN (e.g. `urn:li:share:1234567890`) |
 
+## Posting Safety Protocol (MANDATORY)
+
+Before calling `post_text` or `post_with_article`:
+
+1. **Always display** the exact post text (and article URL/title if applicable) to
+   the user.
+2. **Always ask** "Shall I post this to LinkedIn?" and wait for explicit approval.
+3. **Never post** content that contains:
+   - Email addresses of third parties (your own email from `LINKEDIN_OWNER_EMAILS`
+     in `.env` is fine)
+   - Phone numbers, credit/debit card numbers, IBANs, or government ID numbers
+   - Passwords, API keys, tokens, or any credential material
+   - Health, biometric, or other GDPR special-category data of identifiable people
+4. If the content violates any rule above, refuse and explain why instead of posting.
+
 ## LinkedIn API Notes
 
 - All requests require headers: `Authorization: Bearer <token>`, `LinkedIn-Version: 202601`, `X-Restli-Protocol-Version: 2.0.0`

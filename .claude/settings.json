@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__linkedin__post_text|mcp__linkedin__post_with_article",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/pre_post_check.py"
+          }
+        ]
+      }
+    ]
+  }
+}
