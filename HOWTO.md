@@ -79,6 +79,9 @@ You only need to do this once. Tokens are valid for approximately 60 days.
    }
    ```
 
+   > **Windows:** use `.venv\Scripts\python.exe` — for example:
+   > `"command": "C:\\Users\\you\\Projects\\linkedin-mcp-server\\.venv\\Scripts\\python.exe"`
+
 3. Merge this `mcpServers` entry into your Claude Desktop config at:
    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
@@ -103,7 +106,7 @@ You only need to do this once. Tokens are valid for approximately 60 days.
 Tokens expire after ~60 days. To renew:
 
 ```bash
-source .venv/bin/activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 python auth.py
 ```
 
@@ -114,14 +117,14 @@ This overwrites `.linkedin_token` with a fresh token. No other changes needed.
 ## Running Tests
 
 ```bash
-source .venv/bin/activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 
 # Unit tests (no network required)
 pytest tests/test_server.py -v
 
 # OAuth browser flow test (requires Playwright)
-playwright install chromium
+python -m playwright install chromium
 pytest tests/test_auth.py -v
 ```
 
