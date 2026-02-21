@@ -96,10 +96,11 @@ def run_oauth_flow():
     print(f"\nOpening browser for LinkedIn auth...\n{auth_link}\n")
     webbrowser.open(auth_link)
 
-    # Wait for callback
+    # Wait for callback (loop so that stray TCP probes don't consume the slot)
     server = HTTPServer(("localhost", 8765), CallbackHandler)
     print("Waiting for OAuth callback on http://localhost:8765 ...")
-    server.handle_request()
+    while not auth_code:
+        server.handle_request()
 
     if not auth_code:
         raise SystemExit("No auth code received.")

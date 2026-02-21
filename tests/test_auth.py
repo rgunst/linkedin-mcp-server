@@ -110,18 +110,16 @@ def test_oauth_flow_writes_token_file(temp_project_dir, monkeypatch):
     wrapper = temp_project_dir / "run_auth.py"
     wrapper.write_text(
         f"""
-import auth
-auth.TOKEN_URL = "http://localhost:{token_server_port}/token"
-auth.state_check = "{FAKE_STATE}"
-auth.run_oauth_flow.__globals__['state_check'] = "{FAKE_STATE}"
+# Patch secrets.token_urlsafe before auth.py uses it so state_check is predictable
+import secrets
+secrets.token_urlsafe = lambda n=16: "{FAKE_STATE}"
 
-# Patch state_check directly
-import auth as _auth
-_auth.state_check = "{FAKE_STATE}"
-
-# Also monkey-patch webbrowser so it doesn't open a real browser
+# Suppress browser open
 import webbrowser
 webbrowser.open = lambda url: None
+
+import auth
+auth.TOKEN_URL = "http://localhost:{token_server_port}/token"
 
 auth.run_oauth_flow()
 """
