@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**License:** MIT — Copyright (c) 2026 Ronald de Gunst. See [LICENSE](LICENSE).
+
 ## Project Overview
 
 A LinkedIn MCP (Model Context Protocol) server that exposes LinkedIn posting capabilities as tools for Claude Desktop. It bridges Claude AI with LinkedIn's REST API via OAuth 2.0 authentication.
