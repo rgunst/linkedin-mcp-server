@@ -13,6 +13,7 @@ import os
 import json
 import secrets
 import stat
+import sys
 import time
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -132,7 +133,8 @@ def run_oauth_flow():
     token_file = os.path.join(os.path.dirname(__file__), ".linkedin_token")
     with open(token_file, "w") as f:
         json.dump(token_data, f, indent=2)
-    os.chmod(token_file, stat.S_IRUSR | stat.S_IWUSR)
+    if sys.platform != "win32":
+        os.chmod(token_file, stat.S_IRUSR | stat.S_IWUSR)
 
     print(f"\n✓ Access token saved to {token_file}")
     print(f"  Expires in: {token_data.get('expires_in', '?')} seconds (~60 days)")

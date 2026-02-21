@@ -27,7 +27,7 @@ MCP server that gives Claude Desktop the ability to post, manage, and delete Lin
 git clone https://github.com/rgunst/linkedin-mcp-server.git
 cd linkedin-mcp-server
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 # 2. Add your LinkedIn credentials
@@ -40,7 +40,11 @@ python auth.py
 # 4. Register with Claude Desktop
 ```
 
-Open (or create) `~/Library/Application Support/Claude/claude_desktop_config.json` and add the following, replacing `<absolute-path>` with the full path to your clone (e.g. `/Users/you/Projects/linkedin-mcp-server`):
+Open (or create) the Claude Desktop config file:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Replace `<absolute-path>` with the full path to your clone:
 
 ```json
 {
@@ -53,6 +57,8 @@ Open (or create) `~/Library/Application Support/Claude/claude_desktop_config.jso
 }
 ```
 
+> **Windows:** use `<absolute-path>\.venv\Scripts\python.exe` for the `command` value.
+
 If the file already exists and already has an `"mcpServers"` key, add only the `"linkedin"` block inside it.
 
 > **Note on credentials:** `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` belong in `.env` only — they are used by `auth.py` during the one-time OAuth flow and are never read by `server.py`. The Claude Desktop config needs no secrets because the server reads the access token directly from `.linkedin_token`.
@@ -63,14 +69,14 @@ Restart Claude Desktop and you should see the LinkedIn tools available.
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt -r requirements-dev.txt
 
 # Run unit tests
 pytest tests/test_server.py -v
 
 # Run OAuth browser flow test (requires Playwright)
-playwright install chromium
+python -m playwright install chromium
 pytest tests/test_auth.py -v
 
 # Vulnerability scan
