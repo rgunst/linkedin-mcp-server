@@ -9,8 +9,10 @@ Setup:
 """
 
 import os
+import re
 import json
 import httpx
+from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 
 # ---------------------------------------------------------------------------
@@ -18,6 +20,49 @@ from mcp.server.fastmcp import FastMCP
 # ---------------------------------------------------------------------------
 LINKEDIN_API_BASE = "https://api.linkedin.com/rest"
 LINKEDIN_VERSION  = "202601"  # Fix: 202501 is not a valid/released version
+
+# ---------------------------------------------------------------------------
+# Safety scanner (enforced at the MCP layer so all clients are protected)
+# ---------------------------------------------------------------------------
+_EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
+_SECRET_PATTERNS = [
+    (re.compile(r"eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+"), "JWT token"),
+    (re.compile(r"\bAKIA[0-9A-Z]{16}\b"), "AWS access key"),
+    (re.compile(r"-----BEGIN .*PRIVATE KEY-----"), "PEM private key"),
+    (re.compile(r"(?i)(api_key|secret|password|token|passwd)\s*[=:]\s*\S{8,}"), "credential assignment"),
+]
+
+
+def _load_owner_emails() -> set:
+    raw = os.environ.get("LINKEDIN_OWNER_EMAILS", "")
+    if not raw:
+        env_path = Path(__file__).parent / ".env"
+        if env_path.exists():
+            try:
+                from dotenv import dotenv_values
+                raw = dotenv_values(env_path).get("LINKEDIN_OWNER_EMAILS", "")
+            except ImportError:
+                pass
+    return {addr.strip().lower() for addr in raw.split(",") if addr.strip()}
+
+
+def _safety_check(*fields: str) -> None:
+    """Raise ValueError if any field contains non-whitelisted emails or hard secrets."""
+    combined = " ".join(fields)
+    owner_emails = _load_owner_emails()
+
+    found_emails = {m.lower() for m in _EMAIL_RE.findall(combined)}
+    unknown = found_emails - owner_emails
+    if unknown:
+        raise ValueError(
+            f"Post blocked: non-whitelisted email address(es) detected: "
+            f"{', '.join(sorted(unknown))}. "
+            "Add your own addresses to LINKEDIN_OWNER_EMAILS in .env if intentional."
+        )
+
+    for pattern, label in _SECRET_PATTERNS:
+        if pattern.search(combined):
+            raise ValueError(f"Post blocked: possible hard secret detected ({label}).")
 
 def _get_token() -> str:
     token = os.getenv("LINKEDIN_ACCESS_TOKEN")
@@ -91,6 +136,8 @@ def post_text(text: str, visibility: str = "PUBLIC") -> dict:
     if visibility not in ("PUBLIC", "CONNECTIONS"):
         raise ValueError("visibility must be 'PUBLIC' or 'CONNECTIONS'")
 
+    _safety_check(text)
+
     token   = _get_token()
     profile = _get_profile(token)
     author  = profile["urn"]
@@ -151,6 +198,8 @@ def post_with_article(
 
     if visibility not in ("PUBLIC", "CONNECTIONS"):
         raise ValueError("visibility must be 'PUBLIC' or 'CONNECTIONS'")
+
+    _safety_check(text, article_title, article_description)
 
     token   = _get_token()
     profile = _get_profile(token)

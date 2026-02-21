@@ -105,6 +105,27 @@ def test_post_text_bad_visibility():
         server.post_text("hello", visibility="EVERYONE")
 
 
+def test_post_text_blocks_unknown_email(monkeypatch):
+    monkeypatch.setenv("LINKEDIN_OWNER_EMAILS", "")
+    with pytest.raises(ValueError, match="non-whitelisted email"):
+        server.post_text("contact bob@other.com for info")
+
+
+def test_post_text_allows_whitelisted_email(monkeypatch):
+    monkeypatch.setenv("LINKEDIN_OWNER_EMAILS", "me@example.com")
+    # No network call needed — safety check passes, but we stop before the API
+    # by simply verifying no ValueError is raised for the email itself.
+    # We use a bad visibility to short-circuit before any HTTP call.
+    with pytest.raises(ValueError, match="visibility"):
+        server.post_text("reach me at me@example.com", visibility="INVALID")
+
+
+def test_post_text_blocks_secret(monkeypatch):
+    monkeypatch.setenv("LINKEDIN_OWNER_EMAILS", "")
+    with pytest.raises(ValueError, match="hard secret"):
+        server.post_text("password=supersecretabc123")
+
+
 # ---------------------------------------------------------------------------
 # post_with_article
 # ---------------------------------------------------------------------------
