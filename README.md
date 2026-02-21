@@ -83,6 +83,12 @@ pytest tests/test_auth.py -v
 trivy fs --severity HIGH,CRITICAL .
 ```
 
+> **Claude Code users:** This repository includes a `CLAUDE.md` that is
+> automatically loaded by Claude Code as project instructions. As with any
+> third-party repository, review `CLAUDE.md` before running Claude Code here —
+> a malicious file could contain prompt-injection instructions that direct
+> Claude to take unintended actions.
+
 ## License
 
 MIT — see [LICENSE](LICENSE)
